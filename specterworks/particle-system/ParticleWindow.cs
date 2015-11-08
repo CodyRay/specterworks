@@ -45,68 +45,64 @@ namespace specterworks
 
             var first = Particles.AddFirst(new Particle(10000, 10000, 10000)).Value;
             first.EmitParticle = CoolEmitter;
-            first.TimeLifeSpan = 10;
+            first.TimeLifeSpan = 1000;
             first.Start();
         }
 
         private IEnumerable<Particle> CoolEmitter(Particle p)
         {
-            return Enumerable.Range(0, Rand.NextInt(0, 20)).Select(i =>
+            if (Rand.NextInt(0, 10) == 0)
             {
-                var part = new Particle(p.XBound, p.YBound, p.ZBound);
-                part.StartLocation = new Vector3(p.CurrentLocation.X + Rand.Next(-5, 5), p.CurrentLocation.Y + Rand.Next(-5, 5), p.CurrentLocation.Z + Rand.Next(-5, 5));
-
-                switch (Rand.NextInt(0, 6))
-                    {
-                        case 0:
-                            part.StartVelocity = new Vector3(Rand.Next(-4, 4), Rand.Next(0, 20), Rand.Next(-4, 4));
-                            part.StartAcceleration = new Vector3(0, -1, 0);
-                            break;
-                        case 1:
-                            part.StartVelocity = new Vector3(Rand.Next(0, 20), Rand.Next(-4, 4), Rand.Next(-4, 4));
-                            part.StartAcceleration = new Vector3(-1, 0, 0);
-                            break;
-                        case 2:
-                            part.StartVelocity = new Vector3(Rand.Next(-4, 4), Rand.Next(-4, 4), Rand.Next(0, 20));
-                            part.StartAcceleration = new Vector3(0, 0, -1);
-                            break;
-                        case 3:
-                            part.StartVelocity = new Vector3(Rand.Next(-4, 4), Rand.Next(-20, 0), Rand.Next(-4, 4));
-                            part.StartAcceleration = new Vector3(0, 1, 0);
-                            break;
-                        case 4:
-                            part.StartVelocity = new Vector3(Rand.Next(-20, 0), Rand.Next(-4, 4), Rand.Next(-4, 4));
-                            part.StartAcceleration = new Vector3(1, 0, 0);
-                            break;
-                        case 5:
-                            part.StartVelocity = new Vector3(Rand.Next(-4, 4), Rand.Next(-4, 4), Rand.Next(-20, 0));
-                            part.StartAcceleration = new Vector3(0, 0, 1);
-                            break;
-                    }
-                if (Rand.NextInt(0, (int)((part.TimeAge + 1) * 250)) == 0)
+                p.TimeAge = p.TimeLifeSpan ?? p.TimeAge;
+                if (Rand.NextInt(0, 50) == 0)
                 {
-                    part.EmitParticle = CoolEmitter;
-                    part.TimeLifeSpan = 6;
+                    //Two Children
+                    return new[] { MakeParticle(p, true), MakeParticle(p, true) };
                 }
                 else
-                    part.TimeLifeSpan = 0;
-
-
-                if (p.CurrentColor.B > 10)
-                    part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R, p.CurrentColor.G, p.CurrentColor.B - 10);
-                else if (p.CurrentColor.G > 10)
-                    part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R, p.CurrentColor.G - 10, 0);
-                else if (p.CurrentColor.B > 10)
-                    part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R - 10, 0, 0);
-                else
                 {
-                    part.StartColor = Color.White;
-                    part.EmitParticle = CoolEmitter;
-                    part.TimeLifeSpan = 50;
+                    //One Child
+                    return new[] { MakeParticle(p, true) };
                 }
+            }
+            else
+            {
+                return Enumerable.Range(0, Rand.NextInt(0, 20)).Select(i =>
+                {
+                    Particle part = MakeParticle(p);
 
-                return part;
-            });
+                    return part;
+                });
+            }
+        }
+
+        private Particle MakeParticle(Particle p, bool make_emitter = false)
+        {
+            var part = new Particle(p.XBound, p.YBound, p.ZBound);
+            var velocity = 10;
+            part.StartLocation = new Vector3(p.CurrentLocation.X + Rand.Next(-5, 5), p.CurrentLocation.Y + Rand.Next(-5, 5), p.CurrentLocation.Z + Rand.Next(-5, 5));
+            part.StartVelocity = new Vector3(Rand.Next(-velocity, velocity), Rand.Next(-velocity, velocity), Rand.Next(-velocity, velocity));
+
+            if (p.CurrentColor.B > 10)
+                part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R, p.CurrentColor.G, p.CurrentColor.B - 10);
+            else if (p.CurrentColor.G > 10)
+                part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R, p.CurrentColor.G - 10, 0);
+            else if (p.CurrentColor.B > 10)
+                part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R - 10, 0, 0);
+            else
+            {
+                part.StartColor = Color.White;
+            }
+
+            if (make_emitter)
+            {
+                part.EmitParticle = CoolEmitter;
+                part.TimeLifeSpan = 1000;
+            }
+
+            part.TimeLifeSpan = 5;
+
+            return part;
         }
 
         Stopwatch timer = Stopwatch.StartNew();
@@ -117,7 +113,7 @@ namespace specterworks
 
             if (timer.ElapsedMilliseconds > 100)
             {
-                UpdateParticles((float)timer.ElapsedMilliseconds / 1000);
+                UpdateParticles(((float)timer.ElapsedMilliseconds / 1000));
                 timer = Stopwatch.StartNew();
             }
 
