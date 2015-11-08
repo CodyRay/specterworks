@@ -9,36 +9,22 @@ namespace specterworks
 {
     public class Particle
     {
-        //Used for showing if particle is out of bounds, i.e., it goes too far away from the origin
-        public float XBound { get; }
-        public float YBound { get; }
-        public float ZBound { get; }
+        public bool CanHasTwoBebes { get; set; } = false;
 
-        public Particle(float x, float y, float z)
-        {
-            if (x <= 0 || y <= 0 || z <= 0)
-                throw new InvalidOperationException("Particle Bounds Must be positive");
-            XBound = x;
-            YBound = y;
-            ZBound = z;
-        }
-        public Vector3 StartLocation { get; set; } = new Vector3();
-        public Vector3 StartVelocity { get; set; } = new Vector3();
-        public Vector3 StartAcceleration { get; set; } = new Vector3();
-        public Color StartColor { get; set; } = Color.White;
         public double? TimeLifeSpan { get; set; }
         public Func<Particle, IEnumerable<Particle>> EmitParticle { get; set; }
 
-        public Vector3 CurrentLocation { get; set; } = new Vector3();
-        public Vector3 CurrentVelocity { get; set; } = new Vector3();
-        public Vector3 CurrentAcceleration { get; set; } = new Vector3();
-        public Color CurrentColor { get; set; } = Color.White;
+        public Vector3 Location { get; set; } = new Vector3();
+        public Vector3 Velocity { get; set; } = new Vector3();
+        public Vector3 Acceleration { get; set; } = new Vector3();
+        public Color Color { get; set; } = Color.White;
         public double TimeAge { get; set; } = 0;
 
-        public bool IsAlive => !TimeLifeSpan.HasValue || TimeAge < TimeLifeSpan.Value;
-        public bool IsWithinBounds => (CurrentLocation.X > -XBound && CurrentLocation.X < XBound) &&
-                                      (CurrentLocation.Y > -YBound && CurrentLocation.Y < YBound) &&
-                                      (CurrentLocation.Z > -ZBound && CurrentLocation.Z < ZBound);
+        public bool IsDead { get; set; } = false;
+
+        public bool IsAlive => (!TimeLifeSpan.HasValue || TimeAge < TimeLifeSpan.Value) && !IsDead;
+
+        internal PointColorMode ColorMode { get; set; }
 
         /// <summary>
         /// Move the particle and emit the particles
@@ -51,27 +37,18 @@ namespace specterworks
             foreach (var p in parts)
             {
                 //d = d_0 + v_0*t + a*t^2
-                p.Start();
                 emitter(p);
             }
 
-            CurrentLocation = new Vector3(CurrentLocation.X + CurrentVelocity.X * time + CurrentAcceleration.X * time * time,
-                                          CurrentLocation.Y + CurrentVelocity.Y * time + CurrentAcceleration.Y * time * time,
-                                          CurrentLocation.Z + CurrentVelocity.Z * time + CurrentAcceleration.Z * time * time);
+            Location = new Vector3(Location.X + Velocity.X * time + Acceleration.X * time * time,
+                                          Location.Y + Velocity.Y * time + Acceleration.Y * time * time,
+                                          Location.Z + Velocity.Z * time + Acceleration.Z * time * time);
 
-            CurrentVelocity = new Vector3(CurrentVelocity.X + CurrentAcceleration.X * time,
-                                          CurrentVelocity.Y + CurrentAcceleration.Y * time,
-                                          CurrentVelocity.Z + CurrentAcceleration.Z * time);
+            Velocity = new Vector3(Velocity.X + Acceleration.X * time,
+                                          Velocity.Y + Acceleration.Y * time,
+                                          Velocity.Z + Acceleration.Z * time);
 
             TimeAge += time;
-        }
-
-        public void Start()
-        {
-            CurrentAcceleration = new Vector3(StartAcceleration.X, StartAcceleration.Y, StartAcceleration.Z);
-            CurrentVelocity = new Vector3(StartVelocity.X, StartVelocity.Y, StartVelocity.Z);
-            CurrentLocation = new Vector3(StartLocation.X, StartLocation.Y, StartLocation.Z);
-            CurrentColor = Color.FromArgb(StartColor.A, StartColor.R, StartColor.G, StartColor.B);
         }
     }
 }

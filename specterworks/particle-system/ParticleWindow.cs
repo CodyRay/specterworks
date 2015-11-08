@@ -14,7 +14,7 @@ namespace specterworks
 {
     class ParticleWindow : GameWindow
     {
-        private bool AxesOn = true;
+        private bool AxesOn = false;
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
             base.OnKeyUp(e);
@@ -43,34 +43,39 @@ namespace specterworks
             GL.LineWidth(1);
             GL.EndList();
 
-            var first = Particles.AddFirst(new Particle(10000, 10000, 10000)).Value;
+            var first = Particles.AddFirst(new Particle()).Value;
             first.EmitParticle = CoolEmitter;
-            first.TimeLifeSpan = 1000;
-            first.Start();
+            first.ColorMode = PointColorMode.Red;
         }
 
-        private IEnumerable<Particle> CoolEmitter(Particle p)
+        private IEnumerable<Particle> CoolEmitter(Particle parent)
         {
-            if (Rand.NextInt(0, 10) == 0)
+            if (Rand.NextInt(0, 50) == 0)
             {
-                p.TimeAge = p.TimeLifeSpan ?? p.TimeAge;
-                if (Rand.NextInt(0, 50) == 0)
+                parent.IsDead = true;
+                parent.EmitParticle = null;
+                if (parent.CanHasTwoBebes)
                 {
-                    //Two Children
-                    return new[] { MakeParticle(p, true), MakeParticle(p, true) };
+                    //Two Child
+                    var childs = new[] { MakeParticle(parent, true), MakeParticle(parent, true) };
+                    var colorModes = Enum.GetValues(typeof(PointColorMode)).Cast<PointColorMode>().ToArray();
+                    childs[0].ColorMode = colorModes[Rand.NextInt(0, colorModes.Length)];
+                    childs[1].ColorMode = colorModes[Rand.NextInt(0, colorModes.Length)];
+                    childs[0].Color = Color.White;
+                    childs[1].Color = Color.White;
+                    return childs;
                 }
                 else
                 {
                     //One Child
-                    return new[] { MakeParticle(p, true) };
+                    return new[] { MakeParticle(parent, true) };
                 }
             }
             else
             {
-                return Enumerable.Range(0, Rand.NextInt(0, 20)).Select(i =>
+                return Enumerable.Range(0, Rand.NextInt(0, 5)).Select(i =>
                 {
-                    Particle part = MakeParticle(p);
-
+                    Particle part = MakeParticle(parent);
                     return part;
                 });
             }
@@ -78,44 +83,74 @@ namespace specterworks
 
         private Particle MakeParticle(Particle p, bool make_emitter = false)
         {
-            var part = new Particle(p.XBound, p.YBound, p.ZBound);
-            var velocity = 10;
-            part.StartLocation = new Vector3(p.CurrentLocation.X + Rand.Next(-5, 5), p.CurrentLocation.Y + Rand.Next(-5, 5), p.CurrentLocation.Z + Rand.Next(-5, 5));
-            part.StartVelocity = new Vector3(Rand.Next(-velocity, velocity), Rand.Next(-velocity, velocity), Rand.Next(-velocity, velocity));
+            var part = new Particle();
+            var velocity = 30;
 
-            if (p.CurrentColor.B > 10)
-                part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R, p.CurrentColor.G, p.CurrentColor.B - 10);
-            else if (p.CurrentColor.G > 10)
-                part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R, p.CurrentColor.G - 10, 0);
-            else if (p.CurrentColor.B > 10)
-                part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R - 10, 0, 0);
-            else
-            {
-                part.StartColor = Color.White;
-            }
+            part.Location = new Vector3(p.Location.X + Rand.Next(-5, 5), p.Location.Y + Rand.Next(-5, 5), p.Location.Z + Rand.Next(-5, 5));
+            part.Velocity = new Vector3(Rand.Next(-velocity, velocity), Rand.Next(-velocity, velocity), Rand.Next(-velocity, velocity));
+            part.Color = p.Color;
 
             if (make_emitter)
             {
+                int c;
+                int color_dec = 5;
+                switch (Rand.NextInt(0, 3))
+                {
+                    case 0: //Red
+                        c = p.Color.R + -color_dec;
+                        if (c < 0 || c > 255 || p.ColorMode.HasFlag(PointColorMode.Red))
+                            break;
+                        part.Color = Color.FromArgb(p.Color.A, c, p.Color.G, p.Color.B);
+                        break;
+                    case 1: //Green
+                        c = p.Color.G + -color_dec;
+                        if (c < 0 || c > 255 || p.ColorMode.HasFlag(PointColorMode.Green))
+                            break;
+                        part.Color = Color.FromArgb(p.Color.A, p.Color.R, c, p.Color.B);
+                        break;
+                    case 2: //Blue
+                        c = p.Color.B + -color_dec;
+                        if (c < 0 || c > 255 || p.ColorMode.HasFlag(PointColorMode.Blue))
+                            break;
+                        part.Color = Color.FromArgb(p.Color.A, p.Color.R, p.Color.G, c);
+                        break;
+                }
                 part.EmitParticle = CoolEmitter;
-                part.TimeLifeSpan = 1000;
-            }
+                part.ColorMode = p.ColorMode;
 
-            part.TimeLifeSpan = 5;
+                switch (part.ColorMode)
+                {
+
+                    case PointColorMode.Red:
+                    case PointColorMode.Green:
+                    case PointColorMode.Blue:
+                        if(part.Color.B + part.Color.G + part.Color.R <= 265)
+                            part.CanHasTwoBebes = true;
+                        break;
+                    case PointColorMode.RedGreen:
+                    case PointColorMode.RedBlue:
+                    case PointColorMode.GreenBlue:
+                        if (part.Color.B + part.Color.G + part.Color.R <= 520)
+                            part.CanHasTwoBebes = true;
+                        break;
+                    case PointColorMode.RedGreenBlue:
+                        part.IsDead = true;
+                        part.EmitParticle = null;
+                        break;
+                }
+            }
+            else
+            {
+                part.TimeLifeSpan = 10;
+            }
 
             return part;
         }
 
-        Stopwatch timer = Stopwatch.StartNew();
-
         protected override void OnRenderFrame(FrameEventArgs e) //Same As Display Function in C++
         {
             base.OnRenderFrame(e);
-
-            if (timer.ElapsedMilliseconds > 100)
-            {
-                UpdateParticles(((float)timer.ElapsedMilliseconds / 1000));
-                timer = Stopwatch.StartNew();
-            }
+            UpdateParticles(0.01f);
 
             //Erase Background
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -144,11 +179,11 @@ namespace specterworks
             {
                 next = current.Next; //This is needed because if we remove a particle its pointer will no longer work
                 var part = current.Value;
-                part.Forward(time, p => Particles.AddBefore(current, p));
-                if (part.IsAlive && part.IsWithinBounds)
+                part.Forward(time, p => Particles.AddFirst(p));
+                if (part.IsAlive)
                 {
-                    GL.Color3(part.CurrentColor);
-                    GL.Vertex3(part.CurrentLocation);
+                    GL.Color3(part.Color);
+                    GL.Vertex3(part.Location);
                 }
                 else
                 {
