@@ -3,43 +3,123 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using OpenTK.Input;
 
-namespace opentkgamewindow
+namespace specterworks
 {
     class ParticleWindow : GameWindow
     {
+        private bool AxesOn = true;
+        protected override void OnKeyUp(KeyboardKeyEventArgs e)
+        {
+            base.OnKeyUp(e);
+            if (e?.Key == Key.A)
+                AxesOn = !AxesOn;
+        }
         //Run() method is like glutMainLoop
         public ParticleWindow() : base(Consts.DefaultWindowSize, Consts.DefaultWindowSize) { }
+
+        public LinkedList<Particle> Particles { get; } = new LinkedList<Particle>();
+
+        public RandomSource Rand { get; } = new RandomSource();
 
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
             Title = "Particle System";
             GL.ClearColor(Color.Black);
-            _particleList = GL.GenLists(1);
-            GL.NewList(_particleList, ListMode.Compile);
-            GL.PointSize(5);
-            GL.Color3(Color.White);
-            GL.Begin(BeginMode.Points);
-            GL.Vertex3(20, 0, 20);
-            GL.End();
-            GL.EndList();
 
             _axesList = GL.GenLists(1);
+            _pList = GL.GenLists(1);
             GL.NewList(_axesList, ListMode.Compile);
             GL.Color3(Consts.AxesColor);
             GL.LineWidth(Consts.AxesWidth);
             Axes(Consts.AxesLength);
             GL.LineWidth(1);
             GL.EndList();
+
+            var first = Particles.AddFirst(new Particle(10000, 10000, 10000)).Value;
+            first.EmitParticle = CoolEmitter;
+            first.TimeLifeSpan = 10;
+            first.Start();
         }
+
+        private IEnumerable<Particle> CoolEmitter(Particle p)
+        {
+            return Enumerable.Range(0, Rand.NextInt(0, 20)).Select(i =>
+            {
+                var part = new Particle(p.XBound, p.YBound, p.ZBound);
+                part.StartLocation = new Vector3(p.CurrentLocation.X + Rand.Next(-5, 5), p.CurrentLocation.Y + Rand.Next(-5, 5), p.CurrentLocation.Z + Rand.Next(-5, 5));
+
+                switch (Rand.NextInt(0, 6))
+                    {
+                        case 0:
+                            part.StartVelocity = new Vector3(Rand.Next(-4, 4), Rand.Next(0, 20), Rand.Next(-4, 4));
+                            part.StartAcceleration = new Vector3(0, -1, 0);
+                            break;
+                        case 1:
+                            part.StartVelocity = new Vector3(Rand.Next(0, 20), Rand.Next(-4, 4), Rand.Next(-4, 4));
+                            part.StartAcceleration = new Vector3(-1, 0, 0);
+                            break;
+                        case 2:
+                            part.StartVelocity = new Vector3(Rand.Next(-4, 4), Rand.Next(-4, 4), Rand.Next(0, 20));
+                            part.StartAcceleration = new Vector3(0, 0, -1);
+                            break;
+                        case 3:
+                            part.StartVelocity = new Vector3(Rand.Next(-4, 4), Rand.Next(-20, 0), Rand.Next(-4, 4));
+                            part.StartAcceleration = new Vector3(0, 1, 0);
+                            break;
+                        case 4:
+                            part.StartVelocity = new Vector3(Rand.Next(-20, 0), Rand.Next(-4, 4), Rand.Next(-4, 4));
+                            part.StartAcceleration = new Vector3(1, 0, 0);
+                            break;
+                        case 5:
+                            part.StartVelocity = new Vector3(Rand.Next(-4, 4), Rand.Next(-4, 4), Rand.Next(-20, 0));
+                            part.StartAcceleration = new Vector3(0, 0, 1);
+                            break;
+                    }
+                if (Rand.NextInt(0, (int)((part.TimeAge + 1) * 250)) == 0)
+                {
+                    part.EmitParticle = CoolEmitter;
+                    part.TimeLifeSpan = 6;
+                }
+                else
+                    part.TimeLifeSpan = 0;
+
+
+                if (p.CurrentColor.B > 10)
+                    part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R, p.CurrentColor.G, p.CurrentColor.B - 10);
+                else if (p.CurrentColor.G > 10)
+                    part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R, p.CurrentColor.G - 10, 0);
+                else if (p.CurrentColor.B > 10)
+                    part.StartColor = Color.FromArgb(p.CurrentColor.A, p.CurrentColor.R - 10, 0, 0);
+                else
+                {
+                    part.StartColor = Color.White;
+                    part.EmitParticle = CoolEmitter;
+                    part.TimeLifeSpan = 50;
+                }
+
+                return part;
+            });
+        }
+
+        Stopwatch timer = Stopwatch.StartNew();
+
         protected override void OnRenderFrame(FrameEventArgs e) //Same As Display Function in C++
         {
             base.OnRenderFrame(e);
+
+            if (timer.ElapsedMilliseconds > 100)
+            {
+                UpdateParticles((float)timer.ElapsedMilliseconds / 1000);
+                timer = Stopwatch.StartNew();
+            }
 
             //Erase Background
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -50,9 +130,38 @@ namespace opentkgamewindow
             GL.MatrixMode(MatrixMode.Modelview);
             Matrix4 modelview = Matrix4.LookAt(200, 200, 200, 0, 0, 0, 0, 1, 0);
             GL.LoadMatrix(ref modelview);
-            GL.CallList(_axesList);
-            GL.CallList(_particleList);
+            if (AxesOn)
+                GL.CallList(_axesList);
+            GL.CallList(_pList);
             SwapBuffers();
+        }
+
+        int _pList;
+        private void UpdateParticles(float time)
+        {
+            GL.NewList(_pList, ListMode.Compile);
+            GL.PointSize(1);
+            GL.Begin(BeginMode.Points);
+
+            LinkedListNode<Particle> next;
+            for (var current = Particles.First; current != null; current = next)
+            {
+                next = current.Next; //This is needed because if we remove a particle its pointer will no longer work
+                var part = current.Value;
+                part.Forward(time, p => Particles.AddBefore(current, p));
+                if (part.IsAlive && part.IsWithinBounds)
+                {
+                    GL.Color3(part.CurrentColor);
+                    GL.Vertex3(part.CurrentLocation);
+                }
+                else
+                {
+                    Particles.Remove(current);
+                }
+            }
+
+            GL.End();
+            GL.EndList();
         }
 
         protected override void OnResize(EventArgs e)
@@ -63,7 +172,8 @@ namespace opentkgamewindow
             var v = Math.Min(Width, Height);          // minimum dimension
             var xl = (Width - v) / 2; //Lower Left
             var yb = (Height - v) / 2; //Lower Right
-            GL.Viewport(xl, yb, v, v);
+            //GL.Viewport(xl, yb, v, v);
+            GL.Viewport(0, 0, Width, Height);
 
             // set the viewing volume:
             // remember that the Z clipping  values are actually
@@ -86,9 +196,6 @@ namespace opentkgamewindow
             //GL.LoadMatrix(ref projection);
         }
 
-
-
-        private int _particleList;
         private int _axesList;
 
         void Axes(float length)
