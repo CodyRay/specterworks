@@ -15,11 +15,29 @@ namespace specterworks
     class ParticleWindow : GameWindow
     {
         private bool AxesOn = false;
+        private int VerticalCameraRotation = 0;
+        private int HorizontalCameraRotation = 0;
+        private bool Pause = false;
+        protected override void OnKeyDown(KeyboardKeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (e?.Key == Key.Up)
+                VerticalCameraRotation++;
+            if (e?.Key == Key.Down)
+                VerticalCameraRotation--;
+            if (e?.Key == Key.Left)
+                HorizontalCameraRotation++;
+            if (e?.Key == Key.Right)
+                HorizontalCameraRotation--;
+        }
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
             base.OnKeyUp(e);
             if (e?.Key == Key.A)
                 AxesOn = !AxesOn;
+            if (e?.Key == Key.Space)
+                Pause = !Pause;
+
         }
         //Run() method is like glutMainLoop
         public ParticleWindow() : base(Consts.DefaultWindowSize, Consts.DefaultWindowSize) { }
@@ -63,6 +81,8 @@ namespace specterworks
                     childs[1].ColorMode = colorModes[Rand.NextInt(0, colorModes.Length)];
                     childs[0].Color = Color.White;
                     childs[1].Color = Color.White;
+                    childs[0].CanHasTwoBebes = false;
+                    childs[1].CanHasTwoBebes = false;
                     return childs;
                 }
                 else
@@ -84,14 +104,25 @@ namespace specterworks
         private Particle MakeParticle(Particle p, bool make_emitter = false)
         {
             var part = new Particle();
-            var velocity = 30;
+            var velocity = 5;
 
-            part.Location = new Vector3(p.Location.X + Rand.Next(-5, 5), p.Location.Y + Rand.Next(-5, 5), p.Location.Z + Rand.Next(-5, 5));
-            part.Velocity = new Vector3(Rand.Next(-velocity, velocity), Rand.Next(-velocity, velocity), Rand.Next(-velocity, velocity));
+            part.Location.X = p.Location.X + Rand.Next(-5, 5);
+            part.Location.Y = p.Location.Y + Rand.Next(-5, 5);
+            part.Location.Z = p.Location.Z + Rand.Next(-5, 5);
+
+            part.Velocity.X = p.Velocity.X + Rand.Next(-velocity, velocity);
+            part.Velocity.Y = p.Velocity.Y + Rand.Next(-velocity, velocity);
+            part.Velocity.Z = p.Velocity.Z + Rand.Next(-velocity, velocity);
+
             part.Color = p.Color;
 
             if (make_emitter)
             {
+                var acc_scale = 0.01f;
+                part.Acceleration.X = (p.Location.X * p.Location.X) * acc_scale;
+                part.Acceleration.Y = (p.Location.Y * p.Location.Y) * acc_scale;
+                part.Acceleration.Z = (p.Location.Z * p.Location.Z) * acc_scale;
+
                 int c;
                 int color_dec = 5;
                 switch (Rand.NextInt(0, 3))
@@ -124,7 +155,7 @@ namespace specterworks
                     case PointColorMode.Red:
                     case PointColorMode.Green:
                     case PointColorMode.Blue:
-                        if(part.Color.B + part.Color.G + part.Color.R <= 265)
+                        if (part.Color.B + part.Color.G + part.Color.R <= 265)
                             part.CanHasTwoBebes = true;
                         break;
                     case PointColorMode.RedGreen:
@@ -141,7 +172,7 @@ namespace specterworks
             }
             else
             {
-                part.TimeLifeSpan = 10;
+                part.TimeLifeSpan = 20;
             }
 
             return part;
@@ -150,7 +181,6 @@ namespace specterworks
         protected override void OnRenderFrame(FrameEventArgs e) //Same As Display Function in C++
         {
             base.OnRenderFrame(e);
-            UpdateParticles(0.01f);
 
             //Erase Background
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -159,10 +189,12 @@ namespace specterworks
             GL.ShadeModel(ShadingModel.Flat);
 
             GL.MatrixMode(MatrixMode.Modelview);
-            Matrix4 modelview = Matrix4.LookAt(200, 200, 200, 0, 0, 0, 0, 1, 0);
+            Matrix4 modelview = Matrix4.LookAt(300.0f, 400.0f, 100.0f, 0, 0, 0, 1, 0, 0);
             GL.LoadMatrix(ref modelview);
             if (AxesOn)
                 GL.CallList(_axesList);
+            if (!Pause)
+                UpdateParticles(0.02f);
             GL.CallList(_pList);
             SwapBuffers();
         }
@@ -183,7 +215,7 @@ namespace specterworks
                 if (part.IsAlive)
                 {
                     GL.Color3(part.Color);
-                    GL.Vertex3(part.Location);
+                    GL.Vertex3(part.Location.X, part.Location.Y, part.Location.Z);
                 }
                 else
                 {
@@ -198,33 +230,10 @@ namespace specterworks
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-
-            //Set the viewport to a square centered in the window
-            var v = Math.Min(Width, Height);          // minimum dimension
-            var xl = (Width - v) / 2; //Lower Left
-            var yb = (Height - v) / 2; //Lower Right
-            //GL.Viewport(xl, yb, v, v);
-            GL.Viewport(0, 0, Width, Height);
-
-            // set the viewing volume:
-            // remember that the Z clipping  values are actually
-            // given as DISTANCES IN FRONT OF THE EYE
-            // ONLY USE gluOrtho2D() IF YOU ARE DOING 2D !
-
+            GL.Viewport(ClientRectangle.X, ClientRectangle.Y, ClientRectangle.Width, ClientRectangle.Height);
             GL.MatrixMode(MatrixMode.Projection);
-            //if (true) //TODO: ability to change to perspective view
-            //glOrtho( XMIN, XMAX,   YMIN, YMAX, 0.1, 1000. );
             GL.LoadIdentity();
             GL.Ortho(-300f, 300f, -300f, 300f, 0.1, 1000f);
-            //else
-            //    (90., 1., 0.1, 1000. );
-
-
-
-            //GL.Viewport(ClientRectangle.X, ClientRectangle.Y, ClientRectangle.Width, ClientRectangle.Height);
-            //Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView((float)Math.PI / 4, Width / (float)Height, 1.0f, 64.0f);
-            //GL.MatrixMode(MatrixMode.Projection);
-            //GL.LoadMatrix(ref projection);
         }
 
         private int _axesList;
