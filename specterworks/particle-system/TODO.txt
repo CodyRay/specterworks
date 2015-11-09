@@ -1,5 +1,3 @@
-﻿Make Vector3 into a custom struct, to reduce garbage collection
-Make Color a custom struct instead of creating so many alocations
-Remove logic from IsAlive so that it can be evaluated faster
-Remove call to Enumerable.Empty
-Emitters should have gravity pull to the center
+﻿Impliment Friction as an alternative acceleration
+Impliment Gravity to a specified point
+Impliment Out of Bounds

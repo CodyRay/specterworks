@@ -53,7 +53,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Consts.cs" />
+    <Compile Include="EmitingParticle.cs" />
     <Compile Include="Particle.cs" />
+    <Compile Include="ParticleTypes\Fountain.cs" />
+    <Compile Include="ParticleTypes\RedFountain.cs" />
+    <Compile Include="ParticleTypes\SphereEmiter.cs" />
+    <Compile Include="ParticleTypes\Cloud2Emiter.cs" />
+    <Compile Include="ParticleTypes\Cloud1Emiter.cs" />
+    <Compile Include="ParticleTypes\StartEmitterTwoFountains.cs" />
     <Compile Include="ParticleWindow.cs" />
     <Compile Include="PointColorMode.cs" />
     <Compile Include="Program.cs" />

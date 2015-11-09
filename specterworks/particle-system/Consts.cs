@@ -10,12 +10,13 @@ namespace specterworks
     public static class Consts
     {
         public const int DefaultWindowSize = 600;
+        public const float Bounding = 1000; //If particles go beyond this point in any direction, their velocities and accelerations will be reversed
 
         //Axes
-        public static Color AxesColor = Color.Red;
-        public const int AxesWidth = 2;
+        public const int AxesWidth = 3;
         public const float AxesLengthFraction = 0.1f;
         public const float AxesStartFraction = 1.1f;
-        public const float AxesLength = 100;
+        public const float AxesLength = 1000;
+
     }
 }

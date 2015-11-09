@@ -1,4 +1,5 @@
-﻿using System;
+﻿using specterworks.ParticleTypes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,12 +11,9 @@ namespace specterworks
     {
         static void Main(string[] args)
         {
-            var first = new Particle();
-            first.ColorMode = PointColorMode.Red;
+            var first = new StartEmitterTwoFountains();
             using (var game = new ParticleWindow(first))
             {
-                first.EmitParticle = game.CoolEmitter;
-
                 game.Run(30);
             }
         }
