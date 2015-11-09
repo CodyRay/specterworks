@@ -10,8 +10,12 @@ namespace specterworks
     {
         static void Main(string[] args)
         {
-            using(var game = new ParticleWindow())
+            var first = new Particle();
+            first.ColorMode = PointColorMode.Red;
+            using (var game = new ParticleWindow(first))
             {
+                first.EmitParticle = game.CoolEmitter;
+
                 game.Run(30);
             }
         }

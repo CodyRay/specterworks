@@ -1,72 +1,31 @@
 ﻿using OpenTK;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Input;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using OpenTK.Input;
 
 namespace specterworks
 {
-    class ParticleWindow : GameWindow
+    internal class ParticleWindow : GameWindow
     {
-        private bool AxesOn = false;
-        private int VerticalCameraRotation = 0;
-        private int HorizontalCameraRotation = 0;
-        private bool Pause = false;
-        protected override void OnKeyDown(KeyboardKeyEventArgs e)
-        {
-            base.OnKeyDown(e);
-            if (e?.Key == Key.Up)
-                VerticalCameraRotation++;
-            if (e?.Key == Key.Down)
-                VerticalCameraRotation--;
-            if (e?.Key == Key.Left)
-                HorizontalCameraRotation++;
-            if (e?.Key == Key.Right)
-                HorizontalCameraRotation--;
-        }
-        protected override void OnKeyUp(KeyboardKeyEventArgs e)
-        {
-            base.OnKeyUp(e);
-            if (e?.Key == Key.A)
-                AxesOn = !AxesOn;
-            if (e?.Key == Key.Space)
-                Pause = !Pause;
+        private int _axesList;
+        private int _pList;
 
+        public ParticleWindow(Particle startParticle) : base(Consts.DefaultWindowSize, Consts.DefaultWindowSize)
+        {
+            Particles.AddFirst(startParticle);
         }
-        //Run() method is like glutMainLoop
-        public ParticleWindow() : base(Consts.DefaultWindowSize, Consts.DefaultWindowSize) { }
 
+        public bool AxesOn { get; set; } = false;
+        public int HorizontalCameraRotation { get; set; } = 0;
         public LinkedList<Particle> Particles { get; } = new LinkedList<Particle>();
-
+        public bool Pause { get; set; } = false;
         public RandomSource Rand { get; } = new RandomSource();
+        public int VerticalCameraRotation { get; set; } = 0;
 
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad(e);
-            Title = "Particle System";
-            GL.ClearColor(Color.Black);
-
-            _axesList = GL.GenLists(1);
-            _pList = GL.GenLists(1);
-            GL.NewList(_axesList, ListMode.Compile);
-            GL.Color3(Consts.AxesColor);
-            GL.LineWidth(Consts.AxesWidth);
-            Axes(Consts.AxesLength);
-            GL.LineWidth(1);
-            GL.EndList();
-
-            var first = Particles.AddFirst(new Particle()).Value;
-            first.EmitParticle = CoolEmitter;
-            first.ColorMode = PointColorMode.Red;
-        }
-
-        private IEnumerable<Particle> CoolEmitter(Particle parent)
+        public IEnumerable<Particle> CoolEmitter(Particle parent)
         {
             if (Rand.NextInt(0, 50) == 0)
             {
@@ -133,12 +92,14 @@ namespace specterworks
                             break;
                         part.Color = Color.FromArgb(p.Color.A, c, p.Color.G, p.Color.B);
                         break;
+
                     case 1: //Green
                         c = p.Color.G + -color_dec;
                         if (c < 0 || c > 255 || p.ColorMode.HasFlag(PointColorMode.Green))
                             break;
                         part.Color = Color.FromArgb(p.Color.A, p.Color.R, c, p.Color.B);
                         break;
+
                     case 2: //Blue
                         c = p.Color.B + -color_dec;
                         if (c < 0 || c > 255 || p.ColorMode.HasFlag(PointColorMode.Blue))
@@ -151,19 +112,20 @@ namespace specterworks
 
                 switch (part.ColorMode)
                 {
-
                     case PointColorMode.Red:
                     case PointColorMode.Green:
                     case PointColorMode.Blue:
                         if (part.Color.B + part.Color.G + part.Color.R <= 265)
                             part.CanHasTwoBebes = true;
                         break;
+
                     case PointColorMode.RedGreen:
                     case PointColorMode.RedBlue:
                     case PointColorMode.GreenBlue:
                         if (part.Color.B + part.Color.G + part.Color.R <= 520)
                             part.CanHasTwoBebes = true;
                         break;
+
                     case PointColorMode.RedGreenBlue:
                         part.IsDead = true;
                         part.EmitParticle = null;
@@ -178,28 +140,6 @@ namespace specterworks
             return part;
         }
 
-        protected override void OnRenderFrame(FrameEventArgs e) //Same As Display Function in C++
-        {
-            base.OnRenderFrame(e);
-
-            //Erase Background
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            //No Shading
-            GL.ShadeModel(ShadingModel.Flat);
-
-            GL.MatrixMode(MatrixMode.Modelview);
-            Matrix4 modelview = Matrix4.LookAt(300.0f, 400.0f, 100.0f, 0, 0, 0, 1, 0, 0);
-            GL.LoadMatrix(ref modelview);
-            if (AxesOn)
-                GL.CallList(_axesList);
-            if (!Pause)
-                UpdateParticles(0.02f);
-            GL.CallList(_pList);
-            SwapBuffers();
-        }
-
-        int _pList;
         private void UpdateParticles(float time)
         {
             GL.NewList(_pList, ListMode.Compile);
@@ -226,6 +166,66 @@ namespace specterworks
             GL.End();
             GL.EndList();
         }
+        #region Overrides
+
+        protected override void OnKeyDown(KeyboardKeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (e?.Key == Key.Up)
+                VerticalCameraRotation++;
+            if (e?.Key == Key.Down)
+                VerticalCameraRotation--;
+            if (e?.Key == Key.Left)
+                HorizontalCameraRotation++;
+            if (e?.Key == Key.Right)
+                HorizontalCameraRotation--;
+        }
+
+        protected override void OnKeyUp(KeyboardKeyEventArgs e)
+        {
+            base.OnKeyUp(e);
+            if (e?.Key == Key.A)
+                AxesOn = !AxesOn;
+            if (e?.Key == Key.Space)
+                Pause = !Pause;
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            Title = "Particle System";
+            GL.ClearColor(Color.Black);
+
+            _axesList = GL.GenLists(1);
+            _pList = GL.GenLists(1);
+            GL.NewList(_axesList, ListMode.Compile);
+            GL.Color3(Consts.AxesColor);
+            GL.LineWidth(Consts.AxesWidth);
+            Axes(Consts.AxesLength);
+            GL.LineWidth(1);
+            GL.EndList();
+        }
+
+        protected override void OnRenderFrame(FrameEventArgs e) //Same As Display Function in C++
+        {
+            base.OnRenderFrame(e);
+
+            //Erase Background
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            //No Shading
+            GL.ShadeModel(ShadingModel.Flat);
+
+            GL.MatrixMode(MatrixMode.Modelview);
+            Matrix4 modelview = Matrix4.LookAt(300.0f, 400.0f, 100.0f, 0, 0, 0, 1, 0, 0);
+            GL.LoadMatrix(ref modelview);
+            if (AxesOn)
+                GL.CallList(_axesList);
+            if (!Pause)
+                UpdateParticles(0.02f);
+            GL.CallList(_pList);
+            SwapBuffers();
+        }
 
         protected override void OnResize(EventArgs e)
         {
@@ -236,9 +236,9 @@ namespace specterworks
             GL.Ortho(-300f, 300f, -300f, 300f, 0.1, 1000f);
         }
 
-        private int _axesList;
+        #endregion Overrides
 
-        void Axes(float length)
+        private void Axes(float length)
         {
             GL.Begin(BeginMode.LineStrip);
             GL.Vertex3(length, 0, 0);
@@ -273,7 +273,6 @@ namespace specterworks
                 int j = xorder[i];
                 if (j < 0)
                 {
-
                     GL.End();
                     GL.Begin(BeginMode.LineStrip);
                     j = -j;
@@ -289,7 +288,6 @@ namespace specterworks
                 int j = yorder[i];
                 if (j < 0)
                 {
-
                     GL.End();
                     GL.Begin(BeginMode.LineStrip);
                     j = -j;
@@ -305,7 +303,6 @@ namespace specterworks
                 int j = zorder[i];
                 if (j < 0)
                 {
-
                     GL.End();
                     GL.Begin(BeginMode.LineStrip);
                     j = -j;
@@ -314,7 +311,6 @@ namespace specterworks
                 GL.Vertex3(00, factor * zy[j], start + factor * zx[j]);
             }
             GL.End();
-
         }
     }
 }
