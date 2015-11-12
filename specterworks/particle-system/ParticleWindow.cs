@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace specterworks
 {
-    internal class ParticleWindow : GameWindow
+    public class ParticleWindow : GameWindow
     {
         private int _axesList;
         private int _pList;
@@ -39,7 +39,7 @@ namespace specterworks
                 part.Forward(time, p => Particles.AddFirst(p));
                 if (part.IsAlive && part.IsVisible)
                 {
-                    GL.Color3(part.Color);
+                    GL.Color3(part.ParticleColor.R, part.ParticleColor.G, part.ParticleColor.B);
                     GL.Vertex3(part.Location.X, part.Location.Y, part.Location.Z);
                 }
                 else
@@ -100,10 +100,25 @@ namespace specterworks
             GL.ShadeModel(ShadingModel.Flat);
 
             GL.MatrixMode(MatrixMode.Modelview);
+            
+            //Transform based on 
+            Vector3 eye = new Vector3(300, 0, 0);
+            Vector3 up = new Vector3(0, 1, 0);
 
-            var a1 =  VerticalCameraRotation* Math.PI / 180;
-            var a2 = HorizontalCameraRotation * Math.PI / 180;
-            Matrix4 modelview = Matrix4.LookAt((float)(Scale * Math.Sin(a1) * Math.Cos(a2)), (float)(Scale * Math.Sin(a1) * Math.Sin(a2)), (float)(Scale * Math.Cos(a1)), 0, 0, 0, 0, 1, 0);
+            Vector3 rotation = Vector3.Cross(eye, up);
+
+            Matrix4 rotate1 = Matrix4.CreateRotationY((float)(HorizontalCameraRotation * Math.PI / 180));
+
+            eye = Vector3.TransformVector(eye, rotate1);
+            up = Vector3.TransformVector(up, rotate1);
+            rotation = Vector3.TransformVector(rotation, rotate1);
+
+            Matrix4 rotate2 = Matrix4.CreateFromAxisAngle(rotation, (float)(VerticalCameraRotation * Math.PI / 180));
+
+            eye = Vector3.TransformVector(eye, rotate2);
+            up = Vector3.TransformVector(up, rotate2);
+
+            Matrix4 modelview = Matrix4.LookAt(eye.X, eye.Y, eye.Z, 0, 0, 0, up.X, up.Y, up.Z);
             GL.LoadMatrix(ref modelview);
 
             if (AxesOn)

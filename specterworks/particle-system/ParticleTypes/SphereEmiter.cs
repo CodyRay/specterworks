@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace specterworks.ParticleTypes
 {
@@ -35,7 +36,7 @@ namespace specterworks.ParticleTypes
                 p.Location.Z = Location.Z + RS.Next(-PositionJitter, PositionJitter);
 
                 if (ChildColor)
-                    p.Color = System.Drawing.Color.FromArgb(255, (int)(255 * Math.Abs(p.Velocity.X) / ParticlesVelocity), (int)(255 * Math.Abs(p.Velocity.Y) / ParticlesVelocity), (int)(255 * Math.Abs(p.Velocity.Z) / ParticlesVelocity));
+                    p.ParticleColor = Color.FromArgb(255, (byte)(255 * Math.Abs(p.Velocity.X) / ParticlesVelocity), (byte)(255 * Math.Abs(p.Velocity.Y) / ParticlesVelocity), (byte)(255 * Math.Abs(p.Velocity.Z) / ParticlesVelocity));
 
                 p.Velocity.X += Velocity.X;
                 p.Velocity.Y += Velocity.Y;

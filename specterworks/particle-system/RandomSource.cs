@@ -21,9 +21,14 @@ namespace specterworks
             return (float)(((celing - floor) * random.NextDouble()) + floor);
         }
 
-        internal static int NextInt(int floor, int celing)
+        public static int NextInt(int floor, int celing)
         {
             return random.Next(floor, celing);
+        }
+        
+        public static byte NextByte(byte floor, byte celing)
+        {
+            return (byte)random.Next(floor, celing);
         }
     }
 }

@@ -1,5 +1,8 @@
 ﻿using System;
-using System.Drawing;
+using System.ComponentModel;
+using System.Windows.Media;
+using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
+using Xceed.Wpf.Toolkit.PropertyGrid.Editors;
 
 namespace specterworks
 {
@@ -7,44 +10,96 @@ namespace specterworks
     {
         private double Age = 0;
 
-        public SetXYZ Acceleration { get; set; } = new SetXYZ();
-        public Color Color { get; set; } = Color.White;
+        [Category("Color")]
+        [Editor(typeof(ColorEditor), typeof(ColorEditor))]
+        public Color ParticleColor { get; set; } = Color.FromRgb(255, 255, 255);
+
+        [Category("Lifetime")]
         public bool IsAlive { get; set; } = true;
+        
+        [Category("Lifetime")]
         public bool IsVisible { get; set; } = true;
+
+        [Category("Lifetime")]
         public double? LifeSpan { get; set; }
-        public SetXYZ Location { get; set; } = new SetXYZ();
-        public SetXYZ Velocity { get; set; } = new SetXYZ();
+
+        [Category("Motion")]
+        [ExpandableObject]
+        public SimpleVector Acceleration { get; set; } = new SimpleVector();
+
+        [Category("Motion")]
+        [ExpandableObject]
+        public SimpleVector Location { get; set; } = new SimpleVector();
+
+        [Category("Motion")]
+        [ExpandableObject]
+        public SimpleVector Velocity { get; set; } = new SimpleVector();
+
+        [Category("Motion")]
+        public bool HasGravity { get; set; } = false;
+
+        [Category("Motion")]
+        [ExpandableObject]
+        public SimpleVector GravityLocation { get; set; } = new SimpleVector();
+
+        [Category("Motion")]
+        public int GravityIntensity { get; set; } = 1000;
+
+
 
         /// <summary>
         /// Move the particle and emit the particles
         /// </summary>
         /// <param name="time">The time that will pass in this frame</param>
         /// <param name="emitter">Callback for storing new particles, particles will be set for this frame (no need to call Forward on new particles)</param>
-        public virtual void Forward(double time, Action<Particle> emitter)
+        public virtual void Forward(float time, Action<Particle> emitter)
         {
-            UpdateLocation(ref Location.X, Velocity.X, Acceleration.X, time);
-            UpdateLocation(ref Location.Y, Velocity.Y, Acceleration.Y, time);
-            UpdateLocation(ref Location.Z, Velocity.Z, Acceleration.Z, time);
+            if(HasGravity)
+            {
+                //Assume our particle has a mass of one and the GravityLocation has a mass of GravityIntensity
+                //F_gravity = (m_1 * m_2)/d^2
+                Acceleration.GravityEffect(Location, GravityLocation, GravityIntensity);
+            }
 
-            UpdateVelocity(ref Velocity.X, Acceleration.X, time);
-            UpdateVelocity(ref Velocity.Y, Acceleration.Y, time);
-            UpdateVelocity(ref Velocity.Z, Acceleration.Z, time);
+            Location.PositionChange(Velocity, Acceleration, time);
+            Velocity.VelocityChange(Acceleration, time);
 
             Age += time;
             time -= time;
 
             if (LifeSpan.HasValue && Age > LifeSpan)
                 IsAlive = false;
-        }
 
-        private static void UpdateLocation(ref float P, float V, float A, double time)
-        {
-            P = (float)(P + V * time + A * time * time);
-        }
-
-        private static void UpdateVelocity(ref float V, float A, double time)
-        {
-            V = (float)(V + A * time);
+            if (Location.X > Consts.Bounding)
+            {
+                Velocity.X = -Math.Abs(Velocity.X);
+                Acceleration.X = -Math.Abs(Acceleration.X);
+            }
+            if (Location.X < -Consts.Bounding)
+            {
+                Velocity.X = Math.Abs(Velocity.X);
+                Acceleration.X = Math.Abs(Acceleration.X);
+            }
+            if (Location.Y > Consts.Bounding)
+            {
+                Velocity.Y = -Math.Abs(Velocity.Y);
+                Acceleration.Y = -Math.Abs(Acceleration.Y);
+            }
+            if (Location.Y < -Consts.Bounding)
+            {
+                Velocity.Y = Math.Abs(Velocity.Y);
+                Acceleration.Y = Math.Abs(Acceleration.Y);
+            }
+            if (Location.Z > Consts.Bounding)
+            {
+                Velocity.Z = -Math.Abs(Velocity.Z);
+                Acceleration.Z = -Math.Abs(Acceleration.Z);
+            }
+            if (Location.Z < -Consts.Bounding)
+            {
+                Velocity.Z = Math.Abs(Velocity.Z);
+                Acceleration.Z = Math.Abs(Acceleration.Z);
+            }
         }
     }
 }

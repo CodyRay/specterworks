@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace specterworks.ParticleTypes
 {
-    class StartEmitterTwoFountains : EmitingParticle
+    public class StartEmitterTwoFountains : EmitingParticle
     {
         public StartEmitterTwoFountains()
         {

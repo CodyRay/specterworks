@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Drawing;
 
 namespace specterworks
@@ -6,7 +7,9 @@ namespace specterworks
     public abstract class EmitingParticle : Particle
     {
         private double? EmitTime;
-        public double? EmitPeriod { get; set; }
+
+        [Category("Emiting")]
+        public virtual double? EmitPeriod { get; set; }
 
         protected abstract void Emit(Action<Particle> emitter);
 
@@ -15,13 +18,13 @@ namespace specterworks
         /// </summary>
         /// <param name="time">The time that will pass in this frame</param>
         /// <param name="emitter">Callback for storing new particles, particles will be set for this frame (no need to call Forward on new particles)</param>
-        public override void Forward(double time, Action<Particle> emitter)
+        public override void Forward(float time, Action<Particle> emitter)
         {
             EmitTime = EmitTime ?? EmitPeriod;
 
             while (time > 0)
             {
-                double mintime = time;
+                float mintime = time;
                 bool emit = false;
                 if (EmitPeriod.HasValue && EmitTime.Value < mintime && IsAlive)
                 {
