@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace specterworks
 {
@@ -8,6 +9,7 @@ namespace specterworks
         public float Y { get; set; } = 0;
         public float Z { get; set; } = 0;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void PositionChange(SimpleVector velocity, SimpleVector acceleration, float time)
         {
             X = X + velocity.X * time + acceleration.X * time * time;
@@ -15,6 +17,7 @@ namespace specterworks
             Z = Z + velocity.Z * time + acceleration.Z * time * time;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void VelocityChange(SimpleVector acceleration, float time)
         {
             X = X + acceleration.X * time;
