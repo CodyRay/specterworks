@@ -1,34 +1,65 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
 
 namespace specterworks
 {
     internal static class RS
     {
-        private static Random random;
+        private static ConcurrentQueue<byte> randomBytes = new ConcurrentQueue<byte>();
 
-        static RS()
+        public static int Next(int floor, int celing)
         {
-            random = new Random();
+            return Print((int)((celing - floor) * GetDouble() + floor));
         }
 
-        public static void Seed(int seed)
+        public static byte Next(byte floor, byte celing)
         {
-            random = new Random(seed);
+            return Print((byte)((celing - floor) * ((float)GetByte() / byte.MaxValue) + floor));
         }
 
-        public static float Next(double floor, double celing)
+        public static float Next(float floor, float celing)
         {
-            return (float)(((celing - floor) * random.NextDouble()) + floor);
+            return Print((celing - floor) * (float)GetDouble() + floor);
         }
 
-        public static int NextInt(int floor, int celing)
+        public static double Next(double floor, double celing)
         {
-            return random.Next(floor, celing);
+            return Print((celing - floor) * GetDouble() + floor);
         }
-        
-        public static byte NextByte(byte floor, byte celing)
+
+        public static float NextAngle()
         {
-            return (byte)random.Next(floor, celing);
+            return Print(Next(0, 2 * (float)Math.PI));
+        }
+
+        private static byte GetByte()
+        {
+            byte o;
+            while (!randomBytes.TryDequeue(out o))
+            {
+                byte[] bytes = new byte[1024 * 8];
+                using (var randoms = new RNGCryptoServiceProvider())
+                {
+                    randoms.GetBytes(bytes);
+                }
+                foreach (var b in bytes)
+                {
+                    randomBytes.Enqueue(b);
+                }
+            }
+            return o;
+        }
+        private static double GetDouble()
+        {
+            var i = BitConverter.ToInt32(new[] { GetByte(), GetByte(), GetByte(), GetByte() }, 0);
+            return (i - (double)int.MinValue) / ((double)int.MaxValue - (double)int.MinValue);
+        }
+
+        private static T Print<T>(T value)
+        {
+            //Console.WriteLine(value);
+            return value;
         }
     }
-}
+};

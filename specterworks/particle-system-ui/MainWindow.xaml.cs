@@ -24,7 +24,7 @@ namespace particle_system_ui
     /// </summary>
     public partial class MainWindow : Window
     {
-        Particle first = new StartParticle();
+        Particle first = new BinaryParticleCloud();
         public MainWindow()
         {
             InitializeComponent();
@@ -35,31 +35,27 @@ namespace particle_system_ui
             var btn = (UIElement)sender;
             using (var game = new ParticleWindow(first))
             {
-                var save = JsonConvert.SerializeObject(first, new JsonSerializerSettings
-                {
-                    TypeNameHandling = TypeNameHandling.All,
-                });
+                //var save = JsonConvert.SerializeObject(first, new JsonSerializerSettings
+                //{
+                //    TypeNameHandling = TypeNameHandling.All,
+                //});
                 btn.IsEnabled = false;
                 game.Run(30);
                 btn.IsEnabled = true;
-                first = JsonConvert.DeserializeObject<StartParticle>(save, new JsonSerializerSettings
-                {
-                    TypeNameHandling = TypeNameHandling.All,
-                });
+                //first = JsonConvert.DeserializeObject<StartParticle>(save, new JsonSerializerSettings
+                //{
+                //    TypeNameHandling = TypeNameHandling.All,
+                //});
 
-                properties.SelectedObject = first;
+                //properties.SelectedObject = first;
+                Close();
             }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var start = (StartParticle)first;
-            var ce = new Cloud1Emiter();
-            ce.Location.X = 5;
-            ce.Location.Y = 5;
-            ce.Location.Z = 5;
-            start.StartingParticles.Add(new StartingParticle { TemplateParticle = ce, });
             properties.SelectedObject = first;
+            Button_Click(sender, e);
         }
 
         private void Import_Click(object sender, RoutedEventArgs e)

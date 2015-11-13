@@ -19,7 +19,7 @@ namespace specterworks.ParticleTypes
 
         protected override void Emit(Action<Particle> emitter)
         {
-            foreach (var p in Enumerable.Range(0, RS.NextInt(0, MaxParticlesPerEmit)).Select(i => new Particle()))
+            foreach (var p in Enumerable.Range(0, RS.Next(0, MaxParticlesPerEmit)).Select(i => new Particle()))
             {
                 p.Location.X = Location.X;
                 p.Location.Y = Location.Y;

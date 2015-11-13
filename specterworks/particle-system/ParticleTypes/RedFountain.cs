@@ -11,7 +11,7 @@ namespace specterworks.ParticleTypes
     {
         protected override void SetColor(Particle p)
         {
-            p.ParticleColor = Color.FromArgb(RS.NextByte(0, 255), RS.NextByte(128, 255), RS.NextByte(0, 128), RS.NextByte(0, 128));
+            p.ParticleColor = Color.FromArgb((byte)RS.Next(0, 255), (byte)RS.Next(128, 255), (byte)RS.Next(0, 128), (byte)RS.Next(0, 128));
         }
     }
 }

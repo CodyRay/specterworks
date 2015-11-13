@@ -100,7 +100,7 @@ namespace specterworks
             GL.ShadeModel(ShadingModel.Flat);
 
             GL.MatrixMode(MatrixMode.Modelview);
-            
+
             //Transform based on 
             Vector3 eye = new Vector3(300, 0, 0);
             Vector3 up = new Vector3(0, 1, 0);
@@ -136,7 +136,16 @@ namespace specterworks
             GL.Viewport(ClientRectangle.X, ClientRectangle.Y, ClientRectangle.Width, ClientRectangle.Height);
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
-            GL.Ortho(-300f, 300f, -300f, 300f, 0.1, 1000f);
+            float aspect;
+            if (ClientRectangle.Width == 0 || ClientRectangle.Height == 0)
+            {
+                aspect = 300;
+            }
+            else
+            {
+                aspect = 300 * ClientRectangle.Width / ClientRectangle.Height;
+            }
+            GL.Ortho(-aspect, aspect, -300, 300, 0.1, 1000f);
         }
 
         #endregion Overrides

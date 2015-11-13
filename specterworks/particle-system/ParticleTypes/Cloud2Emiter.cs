@@ -17,7 +17,7 @@ namespace specterworks.ParticleTypes
 
         protected override void Emit(Action<Particle> emitter)
         {
-            foreach (var p in Enumerable.Range(0, RS.NextInt(0, MaxParticlesPerEmit)).Select(i => new Particle()))
+            foreach (var p in Enumerable.Range(0, RS.Next(0, MaxParticlesPerEmit)).Select(i => new Particle()))
             {
                 p.Velocity.X = Velocity.X + RS.Next(-MaxParticlesVelocity, MaxParticlesVelocity);
                 p.Velocity.Y = Velocity.Y + RS.Next(-MaxParticlesVelocity, MaxParticlesVelocity);

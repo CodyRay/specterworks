@@ -49,6 +49,20 @@ namespace specterworks
             return vec;
         }
 
+        internal void Copy(SimpleVector other)
+        {
+            X = other.X;
+            Y = other.Y;
+            Z = other.Z;
+        }
+
+        internal void Vary(float anglea, float angleb, float distance)
+        {
+            X = X + distance * (float)Math.Sin(anglea) * (float)Math.Cos(angleb);
+            Y = Y + distance * (float)Math.Sin(anglea) * (float)Math.Sin(angleb);
+            Z = Z + distance * (float)Math.Cos(anglea);
+        }
+
         public static SimpleVector operator +(SimpleVector left, SimpleVector right)
         {
             SimpleVector vec = new SimpleVector();
