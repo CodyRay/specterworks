@@ -10,7 +10,7 @@ namespace specterworks
     public static class Consts
     {
         public const int DefaultWindowSize = 600;
-        public const float Bounding = 600; //If particles go beyond this point in any direction, their velocities and accelerations will be reversed
+        public static float Bounding = 300; //If particles go beyond this point in any direction, their velocities and accelerations will be reversed
 
         //Axes
         public const int AxesWidth = 3;
