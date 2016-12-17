@@ -1,6 +1,7 @@
 ﻿using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
+using specterworks.ParticleTypes;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -20,7 +21,7 @@ namespace specterworks
 
         public LinkedList<Particle> Particles { get; } = new LinkedList<Particle>();
         public bool AxesOn { get; set; } = false;
-        public bool Pause { get; set; } = false;
+        public bool Pause { get; set; } = true;
         public int HorizontalCameraRotation { get; set; } = 0;
         public int VerticalCameraRotation { get; set; } = 0;
         public float Scale { get; set; } = 200;
@@ -68,6 +69,10 @@ namespace specterworks
                 Scale += 50;
             if (e?.Key == Key.PageDown)
                 Scale -= 50;
+            if (e?.Key == Key.KeypadAdd)
+                Consts.Bounding += 1;
+            if (e?.Key == Key.KeypadMinus)
+                Consts.Bounding -= 1;
         }
 
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
@@ -77,6 +82,8 @@ namespace specterworks
                 AxesOn = !AxesOn;
             if (e?.Key == Key.Space)
                 Pause = !Pause;
+            if (e?.Key == Key.I)
+                BinaryParticleCloud.EmitIons = !BinaryParticleCloud.EmitIons;
         }
 
         protected override void OnLoad(EventArgs e)
@@ -124,7 +131,7 @@ namespace specterworks
             if (AxesOn)
                 GL.CallList(_axesList);
             if (!Pause)
-                UpdateParticles(.1f);
+                UpdateParticles(.025f);
 
             GL.CallList(_pList);
             SwapBuffers();

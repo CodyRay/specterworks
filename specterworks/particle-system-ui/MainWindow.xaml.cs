@@ -55,7 +55,7 @@ namespace particle_system_ui
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             properties.SelectedObject = first;
-            Button_Click(sender, e);
+            //Button_Click(sender, e);
         }
 
         private void Import_Click(object sender, RoutedEventArgs e)

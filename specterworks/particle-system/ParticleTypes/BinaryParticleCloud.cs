@@ -14,7 +14,7 @@ namespace specterworks.ParticleTypes
         {
             ParticleColor = Color.FromRgb(RS.Next((byte)128, (byte)255), RS.Next((byte)128, (byte)255), RS.Next((byte)128, (byte)255));
         }
-        private static Semaphore AvailableClouds = new Semaphore(256, 256);
+        private static Semaphore AvailableClouds = new Semaphore(512, 512);
         public override double? EmitPeriod { get; set; } = 0.1;
         public int SplitChance { get; set; } = 25;
         public float ChildVelocityVariation { get; set; } = 8;
@@ -24,16 +24,16 @@ namespace specterworks.ParticleTypes
         public double ColorIncrement { get; set; } = (double)25 / (double)255;
         public int SplitPeriod { get; set; } = 10;
         private ColorEvolutionMask ColorMask = RandomColorMask();
-        private byte SplitCounter = 0;
+        private int SplitCounter = 0;
 
         protected override void Emit(Action<Particle> emitter)
         {
             if (RS.Next(0, SplitChance) == 0)
             {
-                SplitCounter++;
-                if (SplitCounter == SplitPeriod)
+                SplitCounter--;
+                if (SplitCounter <= 0)
                 {
-                    SplitCounter = 0;
+                    SplitCounter = RS.Next((int)(SplitPeriod/2), SplitPeriod);
                     if (AvailableClouds.WaitOne(0))
                     {
                         emitter(SpawnChild());
@@ -56,7 +56,8 @@ namespace specterworks.ParticleTypes
             }
             else
             {
-                emitter(SpawnIon());
+                if(EmitIons)
+                    emitter(SpawnIon());
             }
         }
 
@@ -81,7 +82,7 @@ namespace specterworks.ParticleTypes
             //p.GravityLocation = Location;
             //p.HasGravity = true;
             p.ParticleColor = ParticleColor;
-            p.LifeSpan = 50;
+            p.LifeSpan = 25;
 
             p.Location.Copy(Location);
             p.Velocity.Copy(Velocity);
@@ -252,6 +253,8 @@ namespace specterworks.ParticleTypes
 
         static ColorEvolutionMask[] ColorMaskValues = new[] { ColorEvolutionMask.Cyan, ColorEvolutionMask.Yellow, ColorEvolutionMask.Magenta,
                                                                 ColorEvolutionMask.Red, ColorEvolutionMask.Green, ColorEvolutionMask.Blue};
+        public static bool EmitIons { get; set; } = true;
+
         public static ColorEvolutionMask RandomColorMask()
         {
             return ColorMaskValues[RS.Next(0, ColorMaskValues.Length)];
